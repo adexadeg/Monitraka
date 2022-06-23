@@ -1,3 +1,5 @@
+from email.policy import default
+from select import select
 from django.db import models
 import uuid
 from django.contrib.auth.models import AbstractBaseUser
@@ -8,13 +10,13 @@ from django.contrib.auth.models import AbstractBaseUser
 
 # Create your models here..
 
-
-class User(AbstractBaseUser):
+Options = (('Whatsapp','Whatsapp'), ('Twitter','Twitter'), ('Instagram','Instagram'), ('A friend','A friend'), ('Our Team','Our Team'))
+class User(AbstractBaseUser,models.Model):
     fullname = models.CharField(max_length=500, blank=True, null=True)
     email = models.EmailField(max_length=255, unique= True)
     phone_number = models.CharField(max_length=15, blank=True, null=True)
     password = models.CharField(max_length=255, null=True)
-    how_did_you_hear_about_us = models.Choices
+    how_did_you_hear_about_us = models.CharField(max_length=300, choices=Options, null=True)
     username = None
 
     USERNAME_FIELD = 'email'

@@ -1,5 +1,4 @@
 from rest_framework.exceptions import AuthenticationFailed
-#from rest_framework.views import APIView
 from users.serializers import UserSerializer
 from rest_framework.response import Response
 from .models import User
@@ -8,17 +7,14 @@ import uuid
 from rest_framework import generics
 from .serializers import LogSerializer
 import jwt, datetime
-#from django.contrib.auth.models import BaseUserManager
 
 
 # Create your views here.
-class RegisterView(generics.GenericAPIView): #APIView):
+class RegisterView(generics.GenericAPIView): 
     serializer_class = UserSerializer
     def post(self, request):
         serializer = UserSerializer(data=request.data)
-        #serializer.is_valid(raise_exception=True)
-        #serializer.save()
-        #return Response(serializer.data)
+        
         if(serializer.is_valid()):
             serializer.save()
             return Response({
@@ -29,7 +25,7 @@ class RegisterView(generics.GenericAPIView): #APIView):
 
         return Response({'Errors': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
-class LoginView(generics.GenericAPIView): #APIView):
+class LoginView(generics.GenericAPIView): 
     serializer_class = LogSerializer
     def post(self, request):
         email = request.data['email']
