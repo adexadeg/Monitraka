@@ -22,7 +22,7 @@ class UserManager(BaseUserManager):
         if kwargs.get('is_superuser') is not True:
             raise ValueError('superuser must have is_staff=True')
         user = self.create_user(email, password, **kwargs)
-        #user.roles = ['SUPERADMIN']
+        user.roles = ['SUPERADMIN']
         user.save()
 
         return user

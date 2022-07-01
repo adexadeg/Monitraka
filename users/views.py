@@ -1,11 +1,12 @@
 from rest_framework.exceptions import AuthenticationFailed
-from users.serializers import UserSerializer, ProfileSettingsSerializer, LoginSerializer, LogoutSerializer
+from users.serializers import UserSerializer, ProfileSettingsSerializer, LoginSerializer, LogoutSerializer, PasswordSettingsSerializer
 from rest_framework.response import Response
-from .models import User, Profile
+from .models import User
 from rest_framework import status
 import uuid
-from rest_framework import generics, viewsets, mixins
+from rest_framework import generics, viewsets
 import jwt, datetime
+from rest_framework.permissions import IsAuthenticated
 
 # Create your views here.
 class RegisterView(generics.GenericAPIView): 
@@ -84,54 +85,13 @@ class LogoutView(generics.GenericAPIView):
         return response
 
 
-class ProfileSettingsView(generics.GenericAPIView, mixins.ListModelMixin, mixins.RetrieveModelMixin, mixins.UpdateModelMixin):
-    queryset = User.objects.all()
+class ProfileSettingsViewSet(viewsets.ModelViewSet):
     serializer_class = ProfileSettingsSerializer
+    queryset = User.objects.all()
+    permission_classes = (IsAuthenticated,)
 
-    def get(self, request):
-        token = request.COOKIES.get('jwt')
-
-        if not token:
-            raise AuthenticationFailed('Unauthenticated!')
-
-        try:
-            payload = jwt.decode(token, 'secret', algorithms=['HS256'])
-        except jwt.ExpiredSignatureError:
-            raise AuthenticationFailed('Unauthenticated!')
-
-        user = User.objects.filter(id=payload['id']).first()
-        serializer = ProfileSettingsSerializer(user)
-
-        return Response(serializer.data)
-
-
-    def put(self, request):
-        serializer = ProfileSettingsSerializer(data=request.data)
-
-        if serializer.is_valid():
-            #User = serializer.save()
-            User.fullname = serializer('fullname')
-            User.email = serializer('email')
-            User.phone_number = serializer('phone_number')
-            User.avatar = serializer('avatar')
-            User.save()
-
-            return Response({
-                'Message': 'Profile saved successfully',
-
-                'User': serializer.data}, status=status.HTTP_201_CREATED)
-
-        return Response({'Errors': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
-
-
-
-
-    # def dispatch(self, request, *args, **kwargs):
-    #     self.profile, __ = Profile.objects.get_or_create(user=request.user)
-    #     return super(ProfileSettingsView, self).dispatch(request, *args, **kwargs)
-
+class PasswordSettingsView(generics.UpdateAPIView): 
+    serializer_class = PasswordSettingsSerializer
+    queryset = User.objects.all()
+    permission_classes = (IsAuthenticated,)
     
-
-
-
-

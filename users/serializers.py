@@ -1,9 +1,6 @@
-import profile
-from attr import fields
 from rest_framework import serializers
-from .models import User, Profile
-from django.dispatch import receiver
-from django.db.models.signals import post_save
+from .models import User
+from django.contrib.auth.password_validation import validate_password
 
 class UserSerializer(serializers.ModelSerializer):
     confirm_password = serializers.CharField(style={'input_type': 'password'}, write_only = True)
@@ -42,7 +39,7 @@ class LoginSerializer(serializers.ModelSerializer):
         model = User
         fields = ['id', 'email', 'password', 'remember_me']
         extra_kwargs = {
-            'password': {'write_only': True}
+            'password': {'style': {'input_type': 'password'},'write_only': True}
         }
 
 
@@ -53,35 +50,46 @@ class LogoutSerializer(serializers.ModelSerializer):
 
 
 class ProfileSettingsSerializer(serializers.ModelSerializer):
-    fullname = serializers.CharField()
-    email = serializers.EmailField()
-    phone_number = serializers.CharField()
-    avatar = serializers.ImageField()
     class Meta:
         model = User
         fields = ['id', 'fullname', 'email', 'phone_number', 'avatar']
 
+    def create(self, validated_data):
+        user = User(
+            fullname=validated_data['fullname'],
+            email=validated_data['email'],
+            phone_number=validated_data['phone_number'],
+            avatar=validated_data['avatar']
+        )
+        user.save
 
-    # def get_fullname(self, obj):
-    #         customer_account_query = models.Profile.objects.filter(
-    #             customer_id=obj.id)
-    #         serializer = AccountSerializer(customer_account_query, many=True)
-    
-    #         return serializer.data
+        return user
 
-    # def get_fullname(self, obj):
-    #     request = self.context['request']
-    #     return request.User.get_fullname()
+class PasswordSettingsSerializer(serializers.ModelSerializer):
+    old_password = serializers.CharField(style={'input_type': 'password'}, write_only=True, required=True)
+    new_password = serializers.CharField(style={'input_type': 'password'}, write_only=True, required=True, validators=[validate_password])
+    confirm_new_password = serializers.CharField(style={'input_type': 'password'}, write_only=True, required=True)
+
+    class Meta:
+        model = User
+        fields = ['old_password', 'new_password', 'confirm_new_password']
+
+    def validate(self, attrs):
+        if attrs['new_password'] != attrs['confirm_new_password']:
+            raise serializers.ValidationError({'new_password': 'Password fields must match.'})
+        return attrs
+
+    def validate_old_password(self, value):
+        user = self.context['request'].user
+        if not user.check_password(value):
+            raise serializers.ValidationError({'old_password': 'Old password is not correct'})
+        return value
 
     def update(self, instance, validated_data):
-        # retrieve the User
-        profile = validated_data.pop('profile', None)
-        for attr, value in profile.items():
-            setattr(instance.user, attr, value)
-
-        # retrieve Profile
-        for attr, value in validated_data.items():
-            setattr(instance, attr, value)
-        instance.user.save()
+        instance.set_password(validated_data['new_password'])
         instance.save()
+
         return instance
+
+
+
