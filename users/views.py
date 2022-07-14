@@ -148,5 +148,5 @@ class ProfileSettingsViewSet(viewsets.ModelViewSet):
 class PasswordSettingsView(generics.UpdateAPIView): 
     serializer_class = PasswordSettingsSerializer
     queryset = User.objects.all()
-    permission_classes = (IsAuthenticated,)
+    #permission_classes = (IsAuthenticated,)
     
